@@ -192,6 +192,55 @@ Print:
 - Where files were written
 - Suggested first action ("ready to start sprint 1; run the first story?")
 - Reminder: stories can be reorganized by editing files directly or asking the architect to revise
+- **A "Next session" block** for the first story in sprint 1 (see below)
+
+---
+
+## The "Next session" handoff convention
+
+Every per-story session — starting with the wizard's Phase 6 final message and continuing through every subsequent story — ends with a ready-to-paste prompt for the next session. This makes the chain self-propagating: each session hands the human a tight prompt and tells them which model/tool to run it in, so orchestration is always pre-chewed. The human's job between sessions is reduced to: close one terminal, open the named tool with the named model, paste.
+
+This pattern emerged organically in earlier projects (e.g. ddev-drush-tui's sprint handoffs ended with "next-assistant prompt for Sprint N"). Codified here.
+
+### Format
+
+```markdown
+## Next session
+
+**Next story:** `{story_id}`
+**Persona:** {persona-name} ({role})
+**Model:** {suggested model from story front-matter}
+**Tool:** {Claude Code | Codex CLI | Gemini CLI | Cursor Composer | …}
+
+**Paste this prompt:**
+
+> You are {Persona}, the {role} on this project. Read `AMS/DOC/project-preferences.md` for standing user preferences, then read `AMS/EPICS/{epic_id}/epic-definition.md` and scrutinize it (per the user's standing epic-kickoff preference, if this is the first story of the epic). Then do this story: `AMS/EPICS/{epic_id}/0-backlog-{story_id}.md`. When done:
+>
+> 1. Rename the story file from `0-backlog-{story_id}.md` to `2-finished-{story_id}.md`
+> 2. Append events to `AMS/.scrum/events.csv`: state→in-progress at session start, state→finished at session end. Use `actor: {Persona}`, `source: manual`.
+> 3. Write a session handoff to `AMS/HANDOFF/` that ends with a "Next session" block following this same template, naming the next story per the sprint's backlog order.
+```
+
+### What "Next session" points to, by context
+
+| Context | Next session block points to |
+|---|---|
+| Wizard Phase 6 final message | First story in sprint 1's backlog order |
+| Mid-sprint story handoff | Next story in the sprint's backlog order |
+| Last story of a sprint | Sprint demo + acceptance review (per `AGENT.md` sprint workflow) |
+| Last story of the final sprint | Closing project handoff (no next session) |
+| Project complete | Block reads: "Project complete; no next session." |
+
+### Picking the model and tool
+
+The story's front-matter `model` field is the suggestion. The agent writing the handoff translates that into a concrete tool/model combination:
+
+- `claude-opus-4-7`, `claude-sonnet-4-6`, `claude-haiku-4-5` → Claude Code, with `/model {name}` mid-session or `claude --model {name}` to start fresh
+- `gpt-5`, `o-{n}` → Codex CLI (model native to the tool)
+- `gemini-2.5`, etc. → Gemini CLI
+- `cursor-*` → Cursor Composer
+
+If the story's `model` doesn't fit the team's available tools, the agent picks the closest plausible substitute and notes it in the next-session block.
 
 ---
 
@@ -213,7 +262,7 @@ If the architect stalls on any of these, that's the next question to ask.
 - Doesn't pick the human's tools (IDE, AI vendor) — agnostic
 - Doesn't enforce model assignments — they're suggestions
 - Doesn't run the work — it scaffolds the project; sprint execution is separate
-- Doesn't generate handoffs — that's the agent-handoff protocol's job
+- Doesn't auto-dispatch sessions — it produces the *prompt* for the next session, but the human still pastes it (this is by design; manual gating is the orchestration model)
 
 ---
 

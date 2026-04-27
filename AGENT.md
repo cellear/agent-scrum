@@ -104,9 +104,55 @@ Keep it short. If a learning becomes a load-bearing convention, promote it to `D
 4. **Set backlog order** — update `Backlog order` in epic definition
 5. **Pick up work** — rename `0-backlog-*` → `1-in-progress-*`
 6. **Complete** — rename `1-in-progress-*` → `2-finished-*`; check the box in the sprint file
-7. **Handoff** — session handoffs (`HANDOFF/handoff-*.md`) reference the sprint and any stories touched
+7. **Handoff** — session handoffs (`HANDOFF/handoff-*.md`) reference the sprint and any stories touched, and end with a **"Next session" block** (see below)
 8. **Sprint demo + acceptance** — human reviews demo checkpoint; fill in `## Acceptance` block
 9. **Retro** — write `LEARNINGS/sprint-{n}.md`
+
+## The "Next session" handoff convention
+
+Every per-story session handoff ends with a ready-to-paste prompt for the next session. This makes the chain self-propagating: each session hands the human a tight prompt and tells them which model/tool to run it in, so orchestration is always pre-chewed. The human's job between sessions is reduced to: close one terminal, open the named tool with the named model, paste.
+
+This pattern emerged organically in earlier projects (e.g. ddev-drush-tui's sprint handoffs ended with "next-assistant prompt for Sprint N"). Codified here.
+
+### Format
+
+```markdown
+## Next session
+
+**Next story:** `{story_id}`
+**Persona:** {persona-name} ({role})
+**Model:** {suggested model from story front-matter}
+**Tool:** {Claude Code | Codex CLI | Gemini CLI | Cursor Composer | …}
+
+**Paste this prompt:**
+
+> You are {Persona}, the {role} on this project. Read `DOC/project-preferences.md` for standing user preferences, then read `EPICS/{epic_id}/epic-definition.md` and scrutinize it (per the user's standing epic-kickoff preference, if this is the first story of the epic). Then do this story: `EPICS/{epic_id}/0-backlog-{story_id}.md`. When done:
+>
+> 1. Rename the story file from `0-backlog-{story_id}.md` to `2-finished-{story_id}.md`
+> 2. Append events to `.scrum/events.csv`: state→in-progress at session start, state→finished at session end. Use `actor: {Persona}`, `source: manual`.
+> 3. Write a session handoff to `HANDOFF/` that ends with a "Next session" block following this same template, naming the next story per the sprint's backlog order.
+```
+
+### What "Next session" points to, by context
+
+| Context | Next session block points to |
+|---|---|
+| First story of project | (Emitted by the wizard at Phase 6) |
+| Mid-sprint story handoff | Next story in the sprint's backlog order |
+| Last story of a sprint | Sprint demo + acceptance review |
+| Last story of the final sprint | Closing project handoff |
+| Project complete | Block reads: "Project complete; no next session." |
+
+### Picking the model and tool
+
+The story's front-matter `model` field is the suggestion. The agent writing the handoff translates that into a concrete tool/model combination:
+
+- `claude-opus-4-7`, `claude-sonnet-4-6`, `claude-haiku-4-5` → Claude Code, with `/model {name}` mid-session or `claude --model {name}` to start fresh
+- `gpt-5`, `o-{n}` → Codex CLI (model native to the tool)
+- `gemini-2.5`, etc. → Gemini CLI
+- `cursor-*` → Cursor Composer
+
+If the story's `model` doesn't fit the team's available tools, the agent picks the closest plausible substitute and notes it in the next-session block.
 
 ## Relation to other protocols
 
@@ -118,4 +164,5 @@ Keep it short. If a learning becomes a load-bearing convention, promote it to `D
 
 Source: https://github.com/cellear/agent-scrum
 
+- **1.1** (2026-04-27) — Added the "Next session" handoff convention (chained per-story prompts with model/tool). Codifies the pattern from ddev-drush-tui sprint handoffs.
 - **1.0** (2026-04-25) — Initial extraction from theme_machine, ddev-xdebug-tui, ddev-drush-tui
